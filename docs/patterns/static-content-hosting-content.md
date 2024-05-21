@@ -67,11 +67,11 @@ The following example demostrate the static content hosting pattern which is mea
 
 This example builds a simple workload containing some code representing the dynamic portion and also deploys the static website part using the Azure Storage support to serve static content. This feature enables serving images and other documents (HTML, CSS, JavaScript, etc.) directly to a browser for anonymous access and read operation requests.
 
-The sample application that demonstrates this pattern is available on [GitHub][sample-app].
+A complete sample is available on GitHub at [Static Hosting pattern example][sample-app].
 
 ![Delivering static parts of an application directly from a storage service](./_images/static-content-hosting-pattern.png)
 
-For better browser negotiation, content type as well as cache directives are set to files being deployed into the storage container named `$web`. This container is created by default when enabling the static website hosting feature. k
+For better browser negotiation, content type as well as cache directives are set to files being deployed into the storage container named `$web`. This container is created by default when enabling the static website hosting feature.
 
 First a storage account [general-purpose V2](https://learn.microsoft.com/azure/storage/common/storage-account-create) or [BlockBlobStorage](https://learn.microsoft.com/azure/storage/common/storage-account-create) is created to provide a unique namespace in Azure for your data and support to serve content from a static container. Files gets exposed through an URL in a subdomain of `core.windows.net`, such as `https://contoso.z4.web.core.windows.net/image.png`. For more information, see [Static website hosting in Azure Storage](/azure/storage/blobs/storage-blob-static-website).
 
