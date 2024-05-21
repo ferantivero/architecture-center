@@ -66,82 +66,14 @@ As with any design decision, consider any tradeoffs against the goals of the oth
 The following example demostrate the static content hosting pattern which is meant for workloads where their content is enterely pre-generated or for those that separate content between dynamic and static. Dynamic content is served by some Azure Compute service while the static part is uploaded beforehand to an internet facing cloud-based storage service. Documents are exposed over internet when these storage services provides with public endoint support.
 
 This example builds a simple workload containing some code representing the dynamic portion and also deploys the static website part using the Azure Storage support to serve static content. This feature enables serving images and other documents (HTML, CSS, JavaScript, etc.) directly to a browser for anonymous access and read operation requests.
+
+The sample application that demonstrates this pattern is available on [GitHub][sample-app].
+
 ![Delivering static parts of an application directly from a storage service](./_images/static-content-hosting-pattern.png)
 
 For better browser negotiation, content type as well as cache directives are set to files being deployed into the storage container named `$web`. This container created by default when enabling the static website hosting feature. First a storage account [general-purpose V2](https://learn.microsoft.com/azure/storage/common/storage-account-create) or [BlockBlobStorage](https://learn.microsoft.com/azure/storage/common/storage-account-create) is created to provide a unique namespace in Azure for your data and support to serve content from a static container. Files gets exposed through an URL in a subdomain of `core.windows.net`, such as `https://contoso.z4.web.core.windows.net/image.png`. For more information, see [Static website hosting in Azure Storage](/azure/storage/blobs/storage-blob-static-website). While this example is simply using Static websites hosting in Azure Storage, if you face limitations or need more advances features such as support for AuthN / AuthZ consider using [Azure Static Web Apps](https://azure.microsoft.com/services/app-service/static/). Additionally, you could natively configure a custom domain for HTTP-only or over HTTPS by using Azure CDN, deliver custom content per region by using Azure Front Door, and implement a CI/CD pipeline solution to update your content reducing human intervention.
 
 Static website hosting makes the files available for anonymous access. If you need to control who can access the files, you can store files in Azure blob storage and then generate [shared access signatures](/azure/storage/common/storage-dotnet-shared-access-signature-part-1) to limit access.
-
-The links in the pages delivered to the client must specify the full URL of the resource. If the resource is protected with a valet key, such as a shared access signature, this signature must be included in the URL.
-
-A sample application that demonstrates using external storage for static resources is available on [GitHub][sample-app]. This sample uses configuration files to specify the storage account and container that holds the static content.
-
-```xml
-<Setting name="StaticContent.StorageConnectionString"
-         value="UseDevelopmentStorage=true" />
-<Setting name="StaticContent.Container" value="static-content" />
-```
-
-The `Settings` class in the file Settings.cs of the StaticContentHosting.Web project contains methods to extract these values and build a string value containing the cloud storage account container URL.
-
-```csharp
-public class Settings
-{
-  public static string StaticContentStorageConnectionString {
-    get
-    {
-      return RoleEnvironment.GetConfigurationSettingValue(
-                              "StaticContent.StorageConnectionString");
-    }
-  }
-
-  public static string StaticContentContainer
-  {
-    get
-    {
-      return RoleEnvironment.GetConfigurationSettingValue("StaticContent.Container");
-    }
-  }
-
-  public static string StaticContentBaseUrl
-  {
-    get
-    {
-        var blobServiceClient = new BlobServiceClient(StaticContentStorageConnectionString);
-
-        return string.Format("{0}/{1}", blobServiceClient.Uri.ToString().TrimEnd('/'), StaticContentContainer.TrimStart('/'));
-    }
-  }
-}
-```
-
-The `StaticContentUrlHtmlHelper` class in the file StaticContentUrlHtmlHelper.cs exposes a method named `StaticContentUrl` that generates a URL containing the path to the cloud storage account if the URL passed to it starts with the ASP.NET root path character (~).
-
-```csharp
-public static class StaticContentUrlHtmlHelper
-{
-  public static string StaticContentUrl(this HtmlHelper helper, string contentPath)
-  {
-    if (contentPath.StartsWith("~"))
-    {
-      contentPath = contentPath.Substring(1);
-    }
-
-    contentPath = string.Format("{0}/{1}", Settings.StaticContentBaseUrl.TrimEnd('/'),
-                                contentPath.TrimStart('/'));
-
-    var url = new UrlHelper(helper.ViewContext.RequestContext);
-
-    return url.Content(contentPath);
-  }
-}
-```
-
-The file Index.cshtml in the Views\Home folder contains an image element that uses the `StaticContentUrl` method to create the URL for its `src` attribute.
-
-```html
-<img src="@Html.StaticContentUrl("~/media/orderedList1.png")" alt="Test Image" />
-```
 
 ## Next steps
 
