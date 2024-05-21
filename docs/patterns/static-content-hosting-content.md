@@ -71,9 +71,15 @@ The sample application that demonstrates this pattern is available on [GitHub][s
 
 ![Delivering static parts of an application directly from a storage service](./_images/static-content-hosting-pattern.png)
 
-For better browser negotiation, content type as well as cache directives are set to files being deployed into the storage container named `$web`. This container created by default when enabling the static website hosting feature. First a storage account [general-purpose V2](https://learn.microsoft.com/azure/storage/common/storage-account-create) or [BlockBlobStorage](https://learn.microsoft.com/azure/storage/common/storage-account-create) is created to provide a unique namespace in Azure for your data and support to serve content from a static container. Files gets exposed through an URL in a subdomain of `core.windows.net`, such as `https://contoso.z4.web.core.windows.net/image.png`. For more information, see [Static website hosting in Azure Storage](/azure/storage/blobs/storage-blob-static-website). While this example is simply using Static websites hosting in Azure Storage, if you face limitations or need more advances features such as support for AuthN / AuthZ consider using [Azure Static Web Apps](https://azure.microsoft.com/services/app-service/static/). Additionally, you could natively configure a custom domain for HTTP-only or over HTTPS by using Azure CDN, deliver custom content per region by using Azure Front Door, and implement a CI/CD pipeline solution to update your content reducing human intervention.
+For better browser negotiation, content type as well as cache directives are set to files being deployed into the storage container named `$web`. This container is created by default when enabling the static website hosting feature. k
+
+First a storage account [general-purpose V2](https://learn.microsoft.com/azure/storage/common/storage-account-create) or [BlockBlobStorage](https://learn.microsoft.com/azure/storage/common/storage-account-create) is created to provide a unique namespace in Azure for your data and support to serve content from a static container. Files gets exposed through an URL in a subdomain of `core.windows.net`, such as `https://contoso.z4.web.core.windows.net/image.png`. For more information, see [Static website hosting in Azure Storage](/azure/storage/blobs/storage-blob-static-website).
 
 Static website hosting makes the files available for anonymous access. If you need to control who can access the files, you can store files in Azure blob storage and then generate [shared access signatures](/azure/storage/common/storage-dotnet-shared-access-signature-part-1) to limit access.
+
+Additionally, you could natively configure a custom domain for HTTP-only or over HTTPS by using Azure CDN, deliver custom content per region by using Azure Front Door, and implement a CI/CD pipeline solution to update your content reducing human intervention.
+
+While this example is simply using Static websites hosting in Azure Storage, if you face limitations or need more advances features such as support for AuthN / AuthZ consider using [Azure Static Web Apps](https://azure.microsoft.com/services/app-service/static/).
 
 ## Next steps
 
