@@ -79,7 +79,9 @@ Static website hosting makes the files available for anonymous access. If you ne
 
 Additionally, you could natively configure a custom domain for HTTP-only or over HTTPS by using Azure CDN, deliver custom content per region by using Azure Front Door, and implement a CI/CD pipeline solution to update your content reducing human intervention.
 
-While this example is simply using Static websites hosting in Azure Storage, if you face limitations or need more advances features such as support for AuthN / AuthZ consider using [Azure Static Web Apps](https://azure.microsoft.com/services/app-service/static/).
+## Alternatives
+
+- While this example is simply using Static websites hosting in Azure Storage, if you face limitations or need more advances features such as support for AuthN / AuthZ consider using [Azure Static Web Apps](https://azure.microsoft.com/services/app-service/static/).
 
 ## Next steps
 
