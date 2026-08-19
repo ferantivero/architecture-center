@@ -174,6 +174,9 @@ Account for context window limits and the increased HTTP request payload size fr
 
 **Current approach:** The reference implementation uses a statically defined agent that's deployed as a microservice within Foundry. The agent's logic and data sources are configured at deployment and remain unchanged until the next application release. This approach works well when agent behavior and data sources are stable and controlled through DevOps processes.
 
+> [!NOTE]
+> A predifined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
+
 **Alternative approach:** You can dynamically create or modify agents at runtime by using the Foundry SDKs. This approach lets the application instantiate agents on demand, adjust system prompts, or reconfigure connections based on user context or business logic.
 
 Consider dynamic agents if your workload requires the following capabilities:
@@ -662,6 +665,12 @@ State management responsibility follows your protocol configuration, not your co
 Use [Microsoft Agent Framework](/agent-framework/overview/) as the runtime SDK in your client application for sending messages to agents, managing conversations, and processing responses. Agent Framework supports C# and Python. If your client application requires JavaScript or Java, use the Foundry SDK directly for these runtime interactions.
 
 Use the Foundry SDK for platform management operations regardless of your client SDK choice. Creating and versioning centrally managed agent definitions belong in CI/CD pipelines and IaC processes, not in client application code.
+
+The SDK you choose to call Foundry determines whether you interact with the agent or directly the model specific endpoint.
+
+This architecture hosts a predefined prompt agent in the Foundry Agent Service. This agent will be discoverable and invoked from your client using a **Foundry-aware SDK** (Agent Framework, Foundry SDK).
+
+Using a **model-specific SDK** (e.g., Anthropic SDK, OpenAI SDK) lets you invoke the model directly (`https://<resource-name>.services.ai.azure.com/anthropic/v1/messages` or `https://<resource-name>.openai.azure.com/openai/v1`). This enables more recent model capabilities and better latency but bypasses all platform tools, leaving only the model's standard tool use.
 
 For more information about integrating Agent Framework with Foundry, see [Microsoft Agent Framework Foundry provider](/agent-framework/agents/providers/microsoft-foundry).
 
