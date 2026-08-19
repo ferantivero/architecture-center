@@ -89,6 +89,10 @@ This architecture includes multiple components that you can substitute with othe
 
 **Current approach:** This architecture uses [Foundry Agent Service](/azure/foundry/agents/overview) to orchestrate prompt agent execution flows, including fetching grounding data through connected tools, invoking AI models, and enforcing consistent response behavior based on the agent's system-level instructions and conversational history. Foundry Agent Service provides codeless, nondeterministic orchestration for conversational AI workloads. It manages chat requests, conversation state, tool invocation, content safety, and integration with identity, networking, and observability. The service supports persistence of conversational context and agent state through a predefined data model deployed into a database within your subscription.
 
+In this architecture, Foundry Agent Service places calls from its prompt agent to its Foundry deployed models and platform tools via the **Responses API** in the project endpoint as a universal entry point. The project endpoint is designed around the OpenAI standard, exposing access to all the platform-deployed models and tools.
+
+Placing calls directly through a model-specific endpoint (Azure OpenAI or Anthropic specialized endpoints) let you access provider-specific models and their standard tooling, leaving out Foundry-specific capabilities.
+
 **Alternative approach:** You can implement custom execution logic in a hosted agent, which is your own deterministic, code-driven agent orchestration logic that runs in a container on Foundry Agent Service. A hosted agent must implement the [Foundry runtime contract](/azure/foundry/agents/concepts/hosted-agent-contract) so the platform can invoke it. You meet that contract by using an SDK adapter or by implementing the contract yourself, and you build the agent's own logic with a framework like the [Agent Framework](/agent-framework/overview/). You [deploy that code](/azure/foundry/agents/how-to/deploy-hosted-agent) as a container image that you build and push to Azure Container Registry you own and govern.
 
 In this alternative, your agent code handles the orchestration, and what the platform manages depends on the protocol your agent exposes.
@@ -101,6 +105,7 @@ Each hosted agent gets a [dedicated endpoint path](/azure/foundry/agents/concept
 
 Consider hosted agents instead of prompt agents when your workload requires one or more of the following capabilities:
 
+- Your current prompt agent execution flows need to expand the platform runtime orchestration logic, which could include making use of specific model capabilities
 - Use of models not [supported by Foundry Agent Service](/azure/foundry/agents/concepts/limits-quotas-regions), or integration with tools not exposed by the service
 
 - Fine-grained, deterministic control over the agent execution path, including explicit orchestration patterns, external systems or tools invocations, prompt engineering, connection with multiple agents, or human-in-the-loop intervention
