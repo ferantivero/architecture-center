@@ -54,6 +54,22 @@ This architecture builds on the [basic Foundry chat reference architecture](./ba
 
   - Process user requests
   - Orchestrate calls to tools and other agents
+
+    Every element in Foundry Agent Service, including your prompt agent with its system instructions, tools, model choice, and configuration must integrate properly with the deployed model, and the platform tools. Every deployed model supported by the Foundry Agent Service benefits from protocol translation handled by the platform, which bridges the Responses API to each model's native interface. This gives a single integration point across all supported models.
+
+    The [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2) lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
+
+    > [!IMPORTANT]
+    > When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
+
+    Before selecting a model, verify it is deployable in Foundry and supports the required Agent Service features and region. You can query available models using Azure CLI or browse the [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2):
+
+    ```azurecli-interactive
+    az cognitiveservices model list -l eastus --query "[?model.capabilities.agentsV2=='true']"
+    ```
+
+    Additionally, even when a model is deployable for Foundry Agent Service, it may not support every platform tool. During the agent design time you must verify that the chosen model supports the specific tools your workload will require at runtime. Refer to [tool support by region and model](/azure/foundry/agents/concepts/limits-quotas-regions#tool-support-by-region-and-model) for the full matrix.
+
   - Enforce content safety
   - Integrate with enterprise identity, networking, and observability
 
