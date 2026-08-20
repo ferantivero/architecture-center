@@ -273,6 +273,25 @@ Foundry doesn't support advanced load balancing or failover mechanisms, like rou
 
 You can also expose gateway-fronted models as custom API-based tools for your agent. For more information, see [Use a gateway in front of multiple Azure OpenAI deployments or instances](../guide/azure-openai-gateway-multi-backend.md).
 
+#### Model switching and behavioral changes
+
+A new model may reason differently, use different tools, or fail on edge cases the previous model handled well. Treat model switches as migrations, not drop-in replacements. This requires:
+
+- **Testing and validation** against the new model before production rollout
+- **Rollback plans** for behavioral regressions
+- **Architectural strategies**: feature forks (model-specific routing paths), per-model test harnesses, or designing model-agnostic agent logic from day one
+- **Prompt agents** have no built-in adaptation mechanism; switching models changes behavior entirely with no ability to add conditional logic
+- **Hosted agents** offer more flexibility but at the cost of code complexity, the agent software architecture must account for model-dependent behavior from day one if model switches are anticipated
+
+The effort required to handle a model switch depends on several factors. Agents using a Foundry-aware SDK may see reduced migration effort since platform tool integrations remain unchanged, but behavioral re-validation is still required. Agents using a model-specific SDK face additional work adapting tool integrations, conversation handling, and code paths to the new model.
+
+> [!NOTE]
+> When designing a hosted agent that routes to multiple models at runtime,
+> consider how each model's reasoning style, tool support, and behavioral patterns
+> differ. Model routing adds complexity to your orchestration logic, increases test
+> surface area, and may require per-model validation of system instructions,
+> response parsing, and error handling.
+
 #### Reliability in AI Search for enterprise knowledge
 
 Deploy AI Search by using the Standard pricing tier or higher in a [region that supports availability zones](/azure/reliability/reliability-ai-search). Configure at least three replicas to ensure that the service distributes instances across separate availability zones. This configuration provides resilience to zone-level failures and supports high availability for search operations.
