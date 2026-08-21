@@ -284,13 +284,6 @@ A new model may reason differently, use different tools, or fail on edge cases t
 
 The effort required to handle a model switch depends on several factors. Agents using a Foundry-aware SDK may see reduced migration effort since platform tool integrations remain unchanged, but behavioral re-validation is still required. Agents using a model-specific SDK face additional work adapting tool integrations, conversation handling, and code paths to the new model.
 
-> [!NOTE]
-> When designing a hosted agent that routes to multiple models at runtime,
-> consider how each model's reasoning style, tool support, and behavioral patterns
-> differ. Model routing adds complexity to your orchestration logic, increases test
-> surface area, and may require per-model validation of system instructions,
-> response parsing, and error handling.
-
 #### Reliability in AI Search for enterprise knowledge
 
 Deploy AI Search by using the Standard pricing tier or higher in a [region that supports availability zones](/azure/reliability/reliability-ai-search). Configure at least three replicas to ensure that the service distributes instances across separate availability zones. This configuration provides resilience to zone-level failures and supports high availability for search operations.
