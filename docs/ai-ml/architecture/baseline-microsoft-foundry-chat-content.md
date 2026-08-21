@@ -118,7 +118,6 @@ Each hosted agent gets a [dedicated endpoint path](/azure/foundry/agents/concept
 
 Consider hosted agents instead of prompt agents when your workload requires one or more of the following capabilities:
 
-- Your current prompt agent execution flows need to expand the platform runtime orchestration logic, which could include making use of specific model capabilities
 - Use of models not [supported by Foundry Agent Service](/azure/foundry/agents/concepts/limits-quotas-regions), or integration with tools not exposed by the service
 
 - Fine-grained, deterministic control over the agent execution path, including explicit orchestration patterns, external systems or tools invocations, prompt engineering, connection with multiple agents, or human-in-the-loop intervention
