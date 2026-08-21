@@ -189,9 +189,6 @@ Account for context window limits and the increased HTTP request payload size fr
 > [!IMPORTANT]
 > When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
 
-> [!NOTE]
-> A predifined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
-
 **Alternative approach:** You can dynamically create or modify agents at runtime by using the Foundry SDKs. This approach lets the application instantiate agents on demand, adjust system prompts, or reconfigure connections based on user context or business logic.
 
 Consider dynamic agents if your workload requires the following capabilities:
@@ -205,6 +202,9 @@ Consider dynamic agents if your workload requires the following capabilities:
 Dynamic agent management increases flexibility but also introduces the burden of life cycle management. Ensure that you have appropriate controls for agent creation, modification, and cleanup.
 
 Choose the agent approach that aligns with your workload's user experience requirements.
+
+> [!NOTE]
+> A predifined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
 
 #### Single-agent or multiagent orchestration
 
