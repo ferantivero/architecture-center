@@ -103,9 +103,6 @@ Additionally, even when a model is deployable for Foundry Agent Service, it may 
 
 In this architecture, Foundry Agent Service places calls from its prompt agent to its Foundry deployed models and platform tools via the **Responses API** in the project endpoint as a universal entry point. The project endpoint is designed around the OpenAI standard, exposing access to all the platform-deployed models and tools.
 
-> [!NOTE]
-> Placing calls directly through a model-specific endpoint (Azure OpenAI or Anthropic specialized endpoints) let you access provider-specific models and their standard tooling, leaving out Foundry-specific capabilities.
-
 **Alternative approach:** You can implement custom execution logic in a hosted agent, which is your own deterministic, code-driven agent orchestration logic that runs in a container on Foundry Agent Service. A hosted agent must implement the [Foundry runtime contract](/azure/foundry/agents/concepts/hosted-agent-contract) so the platform can invoke it. You meet that contract by using an SDK adapter or by implementing the contract yourself, and you build the agent's own logic with a framework like the [Agent Framework](/agent-framework/overview/). You [deploy that code](/azure/foundry/agents/how-to/deploy-hosted-agent) as a container image that you build and push to Azure Container Registry you own and govern.
 
 In this alternative, your agent code handles the orchestration, and what the platform manages depends on the protocol your agent exposes.
@@ -133,6 +130,9 @@ Consider hosted agents instead of prompt agents when your workload requires one 
 - Extended memory stored in a separate database alongside the native Foundry Agent Service conversation state
 
 Hosted agents still run on Foundry-managed compute, so the platform continues to handle scaling and the core runtime. Self-hosted orchestration is a further step in which you run the orchestration layer on compute that you operate, outside Foundry Agent Service. When you run your own infrastructure, you're responsible for all runtime characteristics, capacity, and security.
+
+> [!NOTE]
+> Placing calls directly through a model-specific endpoint (Azure OpenAI or Anthropic specialized endpoints) let you access provider-specific models and their standard tooling, leaving out Foundry-specific capabilities.
 
 #### Application tier components
 
