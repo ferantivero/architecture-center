@@ -93,9 +93,6 @@ Every element in Foundry Agent Service, including your prompt agent with its sys
 
 The [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2) lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
 
-> [!IMPORTANT]
-> When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
-
 Before selecting a model, verify it is deployable in Foundry and supports the required Agent Service features and region. You can query available models using Azure CLI or browse the [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2):
 
 ```azurecli-interactive
@@ -189,6 +186,9 @@ Account for context window limits and the increased HTTP request payload size fr
 #### Predefined agent or dynamically created agent
 
 **Current approach:** The reference implementation uses a statically defined agent that's deployed as a microservice within Foundry. The agent's logic and data sources are configured at deployment and remain unchanged until the next application release. This approach works well when agent behavior and data sources are stable and controlled through DevOps processes.
+
+> [!IMPORTANT]
+> When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
 
 > [!NOTE]
 > A predifined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
