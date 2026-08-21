@@ -54,22 +54,6 @@ This architecture builds on the [basic Foundry chat reference architecture](./ba
 
   - Process user requests
   - Orchestrate calls to tools and other agents
-
-    Every element in Foundry Agent Service, including your prompt agent with its system instructions, tools, model choice, and configuration must integrate properly with the deployed model, and the platform tools. Every deployed model supported by the Foundry Agent Service benefits from protocol translation handled by the platform, which bridges the Responses API to each model's native interface. This gives a single integration point across all supported models.
-
-    The [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2) lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
-
-    > [!IMPORTANT]
-    > When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
-
-    Before selecting a model, verify it is deployable in Foundry and supports the required Agent Service features and region. You can query available models using Azure CLI or browse the [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2):
-
-    ```azurecli-interactive
-    az cognitiveservices model list -l eastus --query "[?model.capabilities.agentsV2=='true']"
-    ```
-
-    Additionally, even when a model is deployable for Foundry Agent Service, it may not support every platform tool. During the agent design time you must verify that the chosen model supports the specific tools your workload will require at runtime. Refer to [tool support by region and model](/azure/foundry/agents/concepts/limits-quotas-regions#tool-support-by-region-and-model) for the full matrix.
-
   - Enforce content safety
   - Integrate with enterprise identity, networking, and observability
 
@@ -105,9 +89,25 @@ This architecture includes multiple components that you can substitute with othe
 
 **Current approach:** This architecture uses [Foundry Agent Service](/azure/foundry/agents/overview) to orchestrate prompt agent execution flows, including fetching grounding data through connected tools, invoking AI models, and enforcing consistent response behavior based on the agent's system-level instructions and conversational history. Foundry Agent Service provides codeless, nondeterministic orchestration for conversational AI workloads. It manages chat requests, conversation state, tool invocation, content safety, and integration with identity, networking, and observability. The service supports persistence of conversational context and agent state through a predefined data model deployed into a database within your subscription.
 
+Every element in Foundry Agent Service, including your prompt agent with its system instructions, tools, model choice, and configuration must integrate properly with the deployed model, and the platform tools. A deployed model supported by the Foundry Agent Service benefits from protocol translation handled by the platform, which bridges the Responses API to each model's native interface. This gives a single integration point across all supported models.
+
+The [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2) lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
+
+> [!IMPORTANT]
+> When creating persistent agents through the Agents REST API, selecting a model or tool that is not supported by Foundry Agent Service may result in unexpected behavior or runtime failure.
+
+Before selecting a model, verify it is deployable in Foundry and supports the required Agent Service features and region. You can query available models using Azure CLI or browse the [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2):
+
+```azurecli-interactive
+az cognitiveservices model list -l eastus --query "[?model.capabilities.agentsV2=='true']"
+```
+
+Additionally, even when a model is deployable for Foundry Agent Service, it may not support every platform tool. During the agent design time you must verify that the chosen model supports the specific tools your workload will require at runtime. Refer to [tool support by region and model](/azure/foundry/agents/concepts/limits-quotas-regions#tool-support-by-region-and-model) for the full matrix.
+
 In this architecture, Foundry Agent Service places calls from its prompt agent to its Foundry deployed models and platform tools via the **Responses API** in the project endpoint as a universal entry point. The project endpoint is designed around the OpenAI standard, exposing access to all the platform-deployed models and tools.
 
-Placing calls directly through a model-specific endpoint (Azure OpenAI or Anthropic specialized endpoints) let you access provider-specific models and their standard tooling, leaving out Foundry-specific capabilities.
+> [!NOTE]
+> Placing calls directly through a model-specific endpoint (Azure OpenAI or Anthropic specialized endpoints) let you access provider-specific models and their standard tooling, leaving out Foundry-specific capabilities.
 
 **Alternative approach:** You can implement custom execution logic in a hosted agent, which is your own deterministic, code-driven agent orchestration logic that runs in a container on Foundry Agent Service. A hosted agent must implement the [Foundry runtime contract](/azure/foundry/agents/concepts/hosted-agent-contract) so the platform can invoke it. You meet that contract by using an SDK adapter or by implementing the contract yourself, and you build the agent's own logic with a framework like the [Agent Framework](/agent-framework/overview/). You [deploy that code](/azure/foundry/agents/how-to/deploy-hosted-agent) as a container image that you build and push to Azure Container Registry you own and govern.
 
