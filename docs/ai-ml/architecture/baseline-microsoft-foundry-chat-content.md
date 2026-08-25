@@ -91,7 +91,7 @@ This architecture includes multiple components that you can substitute with othe
 
 Every element in Foundry Agent Service, including your prompt agent with its system instructions, tools, model choice, and configuration must integrate properly with the deployed model, and the platform tools. A deployed model supported by the Foundry Agent Service benefits from protocol translation handled by the platform, which bridges the Responses API to each model's native interface. This gives a single integration point across all supported models.
 
-The [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2) lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
+The Foundry portal model catalog lists models that the Foundry platform supports for deployment. A model must be explicitly verified and supported by Foundry Agent Service before it can be referenced by your agent. These curated models have been validated for enterprise-grade integration with the agent runtime, platform tools, reliability, governance, and monitoring capabilities.
 
 Before selecting a model, verify it is deployable in Foundry and supports the required Agent Service features and region. You can query available models using Azure CLI or browse the [Foundry portal model catalog](https://ai.azure.com/catalog/models?capabilities=agentsv2):
 
