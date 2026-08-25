@@ -204,7 +204,7 @@ Dynamic agent management increases flexibility but also introduces the burden of
 Choose the agent approach that aligns with your workload's user experience requirements.
 
 > [!NOTE]
-> A predifined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
+> A predefined persisted prompt/hosted agent or even a dynamically created agent (ephemeral) running in-process outside the Foundry Agent Service from your own code make calls through the single shared project endpoint to have access to the same inference and platform capabilities.
 
 #### Single-agent or multiagent orchestration
 
