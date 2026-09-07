@@ -671,6 +671,10 @@ State management responsibility follows your protocol configuration, not your co
 
 #### Agent interaction SDK
 
+This architecture recommends using **Foundry SDK** at build time to manage agent resources and **Agent Framework** at runtime to invoke them. The Foundry SDK provides control-plane authority for building agent definitions typically through CI/CD pipelines while Agent Framework interacts with the data-plane at runtime. Their selection addresses a fundamental requirement of this architecture's workload by managing a persistent agent as a platform-owned entity whose lifecycle and capabilities are handled by Foundry Agent Service instead of the client application.
+
+A generic protocol client can `POST` to the Responses API endpoint and exercise the platform features it provides but cannot go beyond what the protocol surface exposes. Agents cannot be invoked as managed entities from such a client, so every orchestration component must be manually constructed in each request including conversations, tool schemas, system prompts, memory injection, and tracing headers. Agent Framework avoids this burden by understanding the full agent lifecycle natively and invoking agents with an abstraction layer on top of the Responses API, Conversations API, and Foundry platform features. Through this abstraction layer, the client delegates orchestration responsibilities to the platform so that tool resolution, memory attachment, context management, and telemetry are assembled at runtime by Foundry Agent Service rather than carried in every HTTP request by the client.
+
 Use [Microsoft Agent Framework](/agent-framework/overview/) as the runtime SDK in your client application for sending messages to agents, managing conversations, and processing responses. Agent Framework supports C# and Python. If your client application requires JavaScript or Java, use the Foundry SDK directly for these runtime interactions.
 
 Use the Foundry SDK for platform management operations regardless of your client SDK choice. Creating and versioning centrally managed agent definitions belong in CI/CD pipelines and IaC processes, not in client application code.
