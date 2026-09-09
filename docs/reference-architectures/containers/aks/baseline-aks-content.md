@@ -286,21 +286,12 @@ In this architecture, the cluster accesses Azure resources that Microsoft Entra 
 
 - The [AcrPull role](/azure/role-based-access-control/built-in-roles#acrpull) manages the cluster's ability to pull images from the specified Container Registry instances.
 
-Two AKS add-ons provision additional managed identities that require role assignments. The *Secrets Store CSI Driver add-on* identity retrieves TLS certificates from Key Vault. The *application routing add-on* identity manages DNS records and Gateway reconciliation.
+In this architecture, Microsoft Entra Workload Identity provides namespace-scoped identities for Gateway API ingress. The gateway namespace gets its own `ServiceAccount` bound via [federated identity credential](/entra/workload-id/workload-identity-federation) to a user-assigned managed identity with the minimum required Azure roles: `Key Vault Secrets User` for TLS certificate retrieval and `DNS Zone Contributor` for DNS zone record management. The Application Routing operator-managed `external-dns` instance and the CSI Driver synchronization both use the same Workload Identity chain configured on the Gateway listener's namespace.
 
-Grant these two identities the following access to the resources they interact with:
-
-- The Secrets Store CSI Driver add-on managed identity needs the [Key Vault Certificate User](/azure/role-based-access-control/built-in-roles#key-vault-certificate-user) role on your key vault so the driver can retrieve TLS certificates.
-
-  > [!NOTE]
-  > As an alternative, you can replace the CSI Driver add-on managed identity with [Microsoft Entra Workload Identity](/azure/aks/workload-identity-overview) for Key Vault access. When you use Workload Identity, you bind a user-assigned managed identity to a Kubernetes ServiceAccount by using federated credentials, and reference the ServiceAccount in the gateway listener's TLS options. The application routing add-on then creates the SecretProviderClass automatically.
-  >
-  > You typically choose either the add-on's managed identity or Workload Identity for Key Vault access through the CSI driver. Workload Identity provides namespace-scoped identity isolation and reduces manual resource management at the cost of added identity hardening through federated credentials.
-
-- The application routing add-on managed identity needs the [Key Vault Secrets User](/azure/role-based-access-control/built-in-roles#key-vault-secrets-user) and [Key Vault Reader](/azure/role-based-access-control/built-in-roles#key-vault-reader) roles on your key vault. For the built-in DNS component to reconcile gateway resources, this identity also needs the [Private DNS Zone Contributor](/azure/role-based-access-control/built-in-roles/networking#private-dns-zone-contributor) role on the ingress private DNS zone.
-
-  > [!NOTE]
-  > The built-in DNS component deployed with the add-on doesn't automatically reconcile DNS records. For Gateway API records, use the Workload Identity approach.
+> [!NOTE]
+> Creating a federated identity credential on a user-assigned managed identity establishes a trust relationship. It declares that "an external workload presenting a token from issuer X with subject Y is trusted, let it exchange that for an Entra ID token." In the AKS context this means any workload presenting a valid Kubernetes service account token from this cluster (OIDC issuer URL) plus the specified namespace and `ServiceAccount` can exchange its K8s token for an Entra ID access token **as this user-assigned managed identity**. The federated identity credential controls *who is authorized to impersonate* the managed identity. Azure RBAC roles assigned to the managed identity control *what that identity can do*.
+> 
+> Each federated identity credential binds one user-assigned managed identity to one `ServiceAccount`. Every workload that requires access to an Azure service is bound to at least one `ServiceAccount`, each requiring its own federated identity credential. Federation planning should consider the tension between scope granularity and capacity. Bundling multiple workloads onto a single user-assigned managed identity gives them shared Azure permissions but concentrates their federated identity credentials on one user-assigned managed identity, where a per-identity limit constrains how many service accounts can share that scope before requiring additional identities. Each `Gateway` resource with TLS integration requires its ServiceAccount bound to the user-assigned managed identity, and many workloads sharing the same identity for a single TLS certificate would eventually hit this constraint. Distributing workloads across separate user-assigned managed identities avoids this limit but increases identity management overhead.
 
 For more information, see [Configure Azure DNS and TLS with the application routing Gateway API implementation](/azure/aks/app-routing-gateway-api-dns-tls).
 
@@ -368,12 +359,7 @@ The Gateway API components deploy at the following lifecycle stages:
 
   A Gateway resource referencing the `approuting-istio` GatewayClass expresses these decisions. The gateway controller reconciles the resource into Envoy gateway proxy deployments, a LoadBalancer service, a HorizontalPodAutoscaler, and a PodDisruptionBudget in the same namespace as the Gateway resource.
 
-  When a private DNS zone is attached to the add-on, the add-on's DNS component can manage DNS A records so you don't have to maintain static records in your infrastructure as code (IaC) templates. Bootstrapping also deploys the TLS certificate sync resources described in [Access cluster secrets](#access-cluster-secrets).
-
-  > [!NOTE]
-  > The built-in DNS component deployed with the add-on doesn't automatically reconcile DNS records when you use Gateway API resources. To enable automatic private DNS record reconciliation, deploy a [ClusterExternalDNS or ExternalDNS](/azure/aks/app-routing-gateway-api-dns-tls) custom resource. The application routing operator component then deploys a managed `external-dns` instance that watches Gateway and HTTPRoute resources and publishes A records to the attached DNS zone.
-  >
-  > Because writing to the DNS zone requires RBAC permissions, this integration requires Microsoft Entra Workload Identity, including a user-assigned managed identity with DNS Zone Contributor on the target zone, federated identity credentials that trust the cluster's OpenID Connect (OIDC) issuer, and a dedicated Kubernetes ServiceAccount. Evaluate the additional identity infrastructure requirements against your security and operational needs.
+  When a private DNS zone is attached to the add-on, the Application Routing operator provisions automatic DNS record reconciliation using `ClusterExternalDNS` and manages TLS secret synchronization from Azure Key Vault using Microsoft Entra Workload Identity. `ClusterExternalDNS` watches Gateway resources within this namespace and authenticates via the same Workload Identity chain described in [AKS access to Azure components](#aks-access-to-azure-components). When a Gateway resource carries TLS configuration referencing a Key Vault certificate, the operator creates and maintains a `SecretProviderClass` that sources the certificate from Key Vault, syncs it as a Kubernetes Secret via the Secrets Store CSI Driver, and patches the Gateway listener's certificate reference to point at the synced secret.
 
 - **Workload deployment.** The application team defines which hostnames, paths, and back ends should receive traffic. HTTPRoute resources, which bind to the gateway, express these routing decisions. The gateway controller pushes the declared routing behavior to the Envoy pods.
 
@@ -399,6 +385,11 @@ This architecture reduces the risk of a routing change disrupting network config
 - Your routing configuration isn't tied to a specific proxy technology.
 - The proxy version moves with your AKS cluster version rather than requiring independent tracking.
 - Each Gateway resource gets its own proxy deployment rather than sharing a single controller across all routes.
+
+> [!NOTE]
+> When manual configuration is required:
+> - Full control over CSI sync lifecycle parameters is needed (e.g., custom rotation intervals, field extraction rules, volume mount options) that the operator-managed `SecretProviderClass` cannot expose
+> - Compliance or organizational policy mandates that all secrets-sync resources are explicitly authored and version-controlled in infrastructure-as-code pipelines rather than auto-provisioned by an operator
 
 As described in the lifecycle stages section, when you apply a Gateway resource that references the configured GatewayClass, the gateway controller reconciles it into gateway proxy deployment resources and supporting resources. You control subnet placement through infrastructure annotations on the Gateway resource.
 
@@ -472,7 +463,7 @@ The architecture accepts only TLS-encrypted requests from the client. TLS v1.2 i
 
 1. Both TLS certificates are stored in Key Vault.
 
-   The cluster accesses the `bicycle.contoso.com` certificate with a user-assigned managed identity that integrates with Application Gateway. For more information, see [TLS termination with Key Vault certificates](/azure/application-gateway/key-vault-certs). The TLS certificate for `*.aks-ingress.contoso.com` is synced into the cluster as a Kubernetes Secret that the Gateway resource references. For more information, see [Add secret management](#add-secret-management).
+   The cluster accesses the `bicycle.contoso.com` certificate with a user-assigned managed identity that integrates with Application Gateway. For more information, see [TLS termination with Key Vault certificates](/azure/application-gateway/key-vault-certs). The TLS certificate for `*.aks-ingress.contoso.com` is synced into the cluster as a Kubernetes Secret that the Gateway resource references. The Application Routing operator provisions and manages this synchronization through Microsoft Entra Workload Identity, creating a `SecretProviderClass` sourced from Azure Key Vault that syncs the certificate into a Kubernetes Secret referenced by the Gateway listener's TLS configuration.
 
 You can implement end-to-end TLS traffic at every hop. Be sure to consider the performance, latency, and operational effects of any decisions to secure pod-to-pod traffic. For most single-tenant clusters that have proper control plane RBAC and mature software development lifecycle practices, it's sufficient to TLS encrypt up to the gateway proxy and protect with Web Application Firewall. This approach minimizes overhead from workload management and poor network performance. Your workload and compliance requirements dictate where you perform [TLS termination](/azure/application-gateway/ssl-overview#tls-termination).
 
@@ -540,11 +531,7 @@ The Azure RBAC permission model for Key Vault enables you to assign the workload
 
 You must use workload identities to allow a pod to access secrets from a specific store. To facilitate the retrieval process, use a [secrets store CSI driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver). When the pod needs a secret, the driver connects with the specified store, retrieves a secret on a volume, and mounts that volume in the cluster. The pod can then get the secret from the volume file system.
 
-The CSI driver has many providers to support various managed stores. This implementation uses the [Key Vault with Secrets Store CSI driver](/azure/aks/csi-secrets-store-driver) with the manual TLS configuration approach. A SecretProviderClass resource defines which Key Vault certificates to sync into the cluster as Kubernetes Secrets. The CSI driver requires at least one pod to mount the corresponding CSI volume to create and maintain the synced Secret. If you delete all mounted pods, the driver garbage-collects the Secret, which means that the gateway loses its TLS certificate. To prevent this, deploy a dedicated, always-running pod that keeps the CSI volume mounted independently of your workload pods' lifecycles.
-
-This architecture uses the busybox container image, which runs a lightweight container with a dummy task. Import the container image into Azure Container Registry before cluster creation, because Flux deploys it during bootstrapping. Enable secret rotation and set a rotation poll interval like two minutes on the CSI add-on, so that Key Vault certificate renewals propagate automatically. The Gateway resource references the synced TLS Secret for HTTPS termination. For more information, see [Secure ingress traffic with the application routing Gateway API implementation](/azure/aks/app-routing-gateway-api-tls).
-
-As noted in [AKS access to Azure components](#aks-access-to-azure-components), you can replace this manual configuration with the [operator-managed TLS approach](/azure/aks/app-routing-gateway-api-dns-tls). With that approach, you declare the Key Vault certificate URI and a Workload Identity ServiceAccount directly on the gateway listener. The application routing operator then creates the SecretProviderClass and patches the Gateway certificate reference automatically, which eliminates the need to author those resources during cluster bootstrapping or create a dedicated TLS sync pod. Both approaches rely on the CSI driver's rotation mechanism to pick up certificate renewals from Key Vault.
+In this architecture, the Application Routing operator creates and maintains a `SecretProviderClass` for Key Vault-to-cluster secret synchronization based on Gateway resource configuration. TLS certificates are synced as Kubernetes Secrets via the Secrets Store CSI Driver, referenced directly by the Gateway listener's certificate configuration. The operator manages the full lifecycle of these synchronized resources in response to Gateway resource changes, ensuring synced secrets persist independently of workload pod deployment cycles. Secret rotation is handled transparently through the CSI driver's autorotation mechanism, which picks up renewed certificates from Key Vault without manual intervention.
 
 ## Workload storage
 
